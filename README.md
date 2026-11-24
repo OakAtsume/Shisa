@@ -1,4 +1,4 @@
-# Shisa
+# Shisa (シーサー)
 
 **Lightweight fleet management daemon for Linux**
 

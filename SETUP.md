@@ -1,4 +1,4 @@
-# GLOB-VM Fleet Control — Setup Guide
+# Shisa — Setup Guide
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ ruby tools/build_client.rb \
   --server-key $(cat keys/server.pub) \
   --register \
   --static --upx \
-  --output glob-client
+  --output shisa-client
 ```
 
 Multi-server failover (client tries each in order):
@@ -93,7 +93,7 @@ Options:
 | `--host HOST[:PORT]` | Control server (repeatable for failover) |
 | `--port PORT` | Default port when host has none (default: 32435) |
 | `--server-key HEX` | Server public key (auto-reads `keys/server.pub`) |
-| `--output NAME` | Binary name (default: `glob-client`) |
+| `--output NAME` | Binary name (default: `shisa-client`) |
 | `--static` | Static build via Docker alpine |
 | `--upx` | Compress with UPX after build |
 | `--register` | Auto-register client key in `keys/authorized_clients/` |
@@ -111,7 +111,7 @@ Options:
 
 3. Build:
    ```bash
-   crystal build client.cr -o glob-client --release --static
+   crystal build client.cr -o shisa-client --release --static
    ```
 
 ### Multi-server failover
@@ -125,7 +125,7 @@ This handles restricted networks (try port 443, then 22) and primary/backup redu
 After building a new client with `--register`, tell the running server to pick it up without restarting:
 
 ```
-glob> refresh
+shisa> refresh
 reloaded 3 authorized client keys from keys/authorized_clients/
 ```
 

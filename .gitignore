@@ -58,7 +58,7 @@ build-iPhoneSimulator/
 # Compiled binaries and object files
 *.o
 *.dwarf
-glob-client
+shisa-client
 
 # Private keys (never commit)
 keys/*.key

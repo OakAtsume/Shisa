@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Build a new GLOB-VM client binary with a unique compiled-in identity.
+# Build a new Shisa client binary with a unique compiled-in identity.
 #
 # Usage:
 #   ruby tools/build_client.rb --host 10.0.0.1 --port 32435 --server-key <hex>
@@ -13,7 +13,7 @@
 #   --host HOST[:PORT]      Control server address (repeatable for failover)
 #   --port PORT             Default port when --host has no :PORT (default: 32435)
 #   --server-key HEX        Server's Ed25519 public key (from keys/server.pub)
-#   --output NAME           Output binary name (default: glob-client)
+#   --output NAME           Output binary name (default: shisa-client)
 #   --static                Static build (uses Docker alpine if available)
 #   --upx                   Compress binary with UPX after build
 #   --register              Auto-register client pubkey in keys/authorized_clients/
@@ -35,7 +35,7 @@ opts = {
   servers:       [],
   default_port:  32435,
   server_key:    nil,
-  output:        "glob-client",
+  output:        "shisa-client",
   static:        false,
   upx:           false,
   register:      false,
@@ -57,7 +57,7 @@ OptionParser.new do |o|
 
   o.on("--port PORT", Integer, "Default port (default: 32435)") { |p| opts[:default_port] = p }
   o.on("--server-key HEX", "Server Ed25519 public key hex") { |k| opts[:server_key] = k.strip }
-  o.on("--output NAME", "Output binary name (default: glob-client)") { |n| opts[:output] = n }
+  o.on("--output NAME", "Output binary name (default: shisa-client)") { |n| opts[:output] = n }
   o.on("--static", "Static build") { opts[:static] = true }
   o.on("--upx", "Compress with UPX") { opts[:upx] = true }
   o.on("--register", "Register client key on this machine") { opts[:register] = true }
@@ -141,7 +141,7 @@ end
 
 # ── Prepare build directory ──────────────────────────────────────────────
 
-build_dir = Dir.mktmpdir("glob-build-")
+build_dir = Dir.mktmpdir("shisa-build-")
 puts "\n[*] Preparing build in #{build_dir}..."
 
 # Copy project source

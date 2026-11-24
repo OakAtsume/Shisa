@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Interactive shell for the Glob control server.
+# Interactive shell for the Shisa control server.
 # Provides client selection (use), filesystem commands, remote exec,
 # file transfer, sysadmin/network tools, port forwarding, groups, and history.
 
@@ -195,7 +195,7 @@ class Shell
       end
       "\e[36m[#{label}]\e[0m> "
     else
-      "\e[33mglob\e[0m> "
+      "\e[33mshisa\e[0m> "
     end
   end
 
@@ -768,7 +768,7 @@ class Shell
     path = rest&.strip
     return say("usage: edit <remote-path>") if path.nil? || path.empty?
 
-    tmpfile = Tempfile.new(["glob_edit_", File.extname(path)])
+    tmpfile = Tempfile.new(["shisa_edit_", File.extname(path)])
     begin
       say "downloading #{path}..."
       sid = target_ids.first
@@ -1327,7 +1327,7 @@ class Shell
     @shell_closed = false
     $current_prompt = ""
 
-    say "shell opened — type '~.' to return to glob"
+    say "shell opened — type '~.' to return to shisa"
     sleep 0.3
 
     begin
@@ -1368,7 +1368,7 @@ class Shell
       name = args&.strip
       return say("usage: memfile edit <name>") unless name && !name.empty?
 
-      tmpfile = Tempfile.new(["glob_memfile_", File.extname(name)])
+      tmpfile = Tempfile.new(["shisa_memfile_", File.extname(name)])
       begin
         # Download existing content if any
         reply = request(target_ids.first, "memfile_read", { name: name }, timeout: 10)
@@ -1609,7 +1609,7 @@ class Shell
   def cmd_migrate(rest)
     return say("migrate requires a single client") if multi_target?
     path = rest&.strip
-    return say("usage: migrate <target-path>  (e.g. /opt/glob/client)") if path.nil? || path.empty?
+    return say("usage: migrate <target-path>  (e.g. /opt/shisa/client)") if path.nil? || path.empty?
 
     sid = target_ids.first
     return say("client offline") unless sid
@@ -1833,25 +1833,25 @@ class Shell
       if args&.strip =~ /\A(-h|--help|\?)\z/
         puts <<~TXT
 
-          \e[1mservice install\e[0m — install glob-client as a systemd service
+          \e[1mservice install\e[0m — install shisa-client as a systemd service
 
           \e[1mOptions:\e[0m
-            --name <name>       unit name            (default: glob-vm)
+            --name <name>       unit name            (default: shisa)
             --user <user>       run as this user     (default: root)
             --host <host>       server address       (default: 127.0.0.1)
             --port <port>       server port          (default: 8081)
             --workdir <path>    working directory     (default: binary's directory)
-            --description <txt> unit description     (default: 红猫 Daemon)
+            --description <txt> unit description     (default: Shisa Daemon)
 
           \e[1mExample:\e[0m
-            service install --name glob-vm --user nobody --port 9090
+            service install --name shisa --user nobody --port 9090
 
           \e[1mWorkflow:\e[0m
             escalate sudo              # get root privileges
-            migrate /usr/local/bin/glob-vm  # move binary to system path
+            migrate /usr/local/bin/shisa  # move binary to system path
             service install             # write unit file + daemon-reload
-            service enable glob-vm      # start on boot
-            service start glob-vm       # start now
+            service enable shisa      # start on boot
+            service start shisa       # start now
 
         TXT
         return
@@ -1901,7 +1901,7 @@ class Shell
         service reload <unit>          reload a service
         service enable <unit>          enable on boot
         service disable <unit>         disable on boot (confirmation)
-        service install [--name N] [--user U]  install glob-client as systemd service
+        service install [--name N] [--user U]  install shisa-client as systemd service
       TXT
     end
   end
@@ -2386,7 +2386,7 @@ class Shell
 
     ok = 0
     files.each_with_index do |f, i|
-      tmpfile = Tempfile.new("glob_scp_")
+      tmpfile = Tempfile.new("shisa_scp_")
       begin
         rel = is_multi ? File.basename(f) : nil
         dest = is_multi ? File.join(dst_path, rel) : dst_path
@@ -2820,7 +2820,7 @@ class Shell
   def help_text
     <<~TXT
 
-      \e[1mGlob Control Shell\e[0m
+      \e[1mShisa Control Shell\e[0m
 
         use <id|alias|hostname|@group>   select a client or group
         who / list             show connected clients
@@ -2927,7 +2927,7 @@ class Shell
         service status <unit>          show unit status
         service start|stop|restart <u> manage a service
         service enable|disable <unit>  boot persistence
-        service install [opts]         install glob-client as systemd service
+        service install [opts]         install shisa-client as systemd service
 
       \e[1mWatch / Find:\e[0m
         watch [-n sec] <cmd>   periodically run command (Ctrl+C to stop)

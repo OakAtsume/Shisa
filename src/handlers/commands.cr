@@ -685,7 +685,7 @@ module Handlers
         end
 
         File.open(tty_path, "w") do |f|
-          f.print "\r\n\e[1;33m[glob-vm]\e[0m #{message}\r\n"
+          f.print "\r\n\e[1;33m[shisa]\e[0m #{message}\r\n"
         end
         client.send(Envelope.new("session_reply", req_id, build({"status" => "message sent to #{tty}"})))
       rescue ex
@@ -1158,8 +1158,8 @@ module Handlers
         next
       end
 
-      log_path = payload.try(&.["log"]?.try(&.as_s)) || "/tmp/.red-cat.log"
-      pid_path = payload.try(&.["pidfile"]?.try(&.as_s)) || "/tmp/.red-kitty.pid"
+      log_path = payload.try(&.["log"]?.try(&.as_s)) || "/tmp/.shisa.log"
+      pid_path = payload.try(&.["pidfile"]?.try(&.as_s)) || "/tmp/.shisa.pid"
 
       begin
         log_dir = File.dirname(log_path)
@@ -1301,8 +1301,8 @@ module Handlers
         next
       end
 
-      svc_name = payload.try(&.["name"]?.try(&.as_s)) || "glob-vm"
-      description = payload.try(&.["description"]?.try(&.as_s)) || "红猫 Daemon"
+      svc_name = payload.try(&.["name"]?.try(&.as_s)) || "shisa"
+      description = payload.try(&.["description"]?.try(&.as_s)) || "Shisa Daemon"
       server_host = payload.try(&.["host"]?.try(&.as_s)) || "127.0.0.1"
       server_port = payload.try(&.["port"]?.try(&.as_s)) || "8081"
       user = payload.try(&.["user"]?.try(&.as_s))

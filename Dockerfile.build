@@ -1,0 +1,9 @@
+FROM crystallang/crystal:latest-alpine
+
+RUN apk add --no-cache \
+    openssl-dev openssl-libs-static \
+    zlib-dev zlib-static \
+    yaml-dev yaml-static \
+    gc-dev
+
+WORKDIR /src

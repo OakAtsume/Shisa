@@ -1,0 +1,16 @@
+name: diffie
+version: 0.1.0
+
+authors:
+  - your-name-here <your-email-here>
+
+targets:
+  diffie:
+    main: src/diffie.cr
+
+dependencies:
+  rfc8439:
+    github: threez/rfc8439.cr
+crystal: '>= 1.19.1'
+
+license: MIT

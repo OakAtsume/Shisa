@@ -1,0 +1,6 @@
+version: 2.0
+shards:
+  rfc8439:
+    git: https://github.com/threez/rfc8439.cr.git
+    version: 1.0.4
+

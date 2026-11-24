@@ -1,0 +1,10 @@
+require("openssl")
+
+# Remove newlines and spaces from the string!
+hex_prime = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B139B22514A08798E3404DD29024E088A67CC74020BBEA63B139B22514A08798E3404DDE485B576625E7EC6F44C42E9A63A3620FFFFFFFFFFFFFFFF"
+@prime = OpenSSL::BN.new(hex_prime, 16)
+@gen = OpenSSL::BN.new("2", 10)
+
+# Use a FIXED number instead of rand
+privKey = OpenSSL::BN.new("123456789", 10)
+puts @gen.mod_exp(privKey, @prime).to_i

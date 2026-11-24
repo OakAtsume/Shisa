@@ -1,0 +1,5 @@
+require "spec"
+require "../src/aead"
+require "../src/hkdf"
+require "../src/session"
+require "../src/client"
